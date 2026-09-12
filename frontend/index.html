@@ -13,6 +13,10 @@
     async function startMic(){
         const stream = await navigator.mediaDevices.getUserMedia({audio:true})
         console.log(stream)
+        const context = new AudioContext()
+        const sample_rate = context.sampleRate
+        const source = context.createMediaStreamSource(stream);
+        console.log(sample_rate)
     }
 </script>
 </html>
