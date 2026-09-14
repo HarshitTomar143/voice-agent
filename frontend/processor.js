@@ -3,6 +3,7 @@ class MicProcessor extends AudioWorkletProcessor {
     const input = inputs[0][0]
     if (input != null){
         console.log(input.length)
+        this.port.postMessage(input)
     }
     return true
 

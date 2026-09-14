@@ -21,6 +21,10 @@
         await context.audioWorklet.addModule('processor.js');
         
         const node = new AudioWorkletNode(context, 'mic-processor');
+
+        node.port.onmessage = (event) => {
+            console.log(event.data);
+            };
         
         source.connect(node)
     }
