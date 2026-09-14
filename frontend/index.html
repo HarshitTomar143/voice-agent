@@ -17,6 +17,12 @@
         const sample_rate = context.sampleRate
         const source = context.createMediaStreamSource(stream);
         console.log(sample_rate)
+        
+        await context.audioWorklet.addModule('processor.js');
+        
+        const node = new AudioWorkletNode(context, 'mic-processor');
+        
+        source.connect(node)
     }
 </script>
 </html>
