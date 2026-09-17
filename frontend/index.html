@@ -31,8 +31,17 @@
         const socket = new WebSocket('ws://localhost:8000/ws');
         socket.onopen = () => console.log('connected!');
 
-        socket.onmessage = (event) => {
-            console.log('got echo back: ',event.data);
+        socket.onmessage = async (event) => {
+            const arrayBuffer = await event.data.arrayBuffer()
+            const samples = new Float32Array(arrayBuffer);
+
+            const audioBuffer = context.createBuffer(1, samples.length, context.sampleRate)
+            audioBuffer.copyToChannel(samples,0)
+
+            const player = context.createBufferSource();
+            player.buffer = audioBuffer;
+            player.connect(context.destination);
+            player.start();
         }
     }
 </script>
