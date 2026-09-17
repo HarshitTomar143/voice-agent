@@ -12,11 +12,11 @@
 <script>
     async function startMic(){
         const stream = await navigator.mediaDevices.getUserMedia({audio:true})
-        console.log(stream)
+        
         const context = new AudioContext()
         const sample_rate = context.sampleRate
         const source = context.createMediaStreamSource(stream);
-        console.log(sample_rate)
+        
         
         await context.audioWorklet.addModule('processor.js');
         
@@ -30,6 +30,10 @@
 
         const socket = new WebSocket('ws://localhost:8000/ws');
         socket.onopen = () => console.log('connected!');
+
+        socket.onmessage = (event) => {
+            console.log('got echo back: ',event.data);
+        }
     }
 </script>
 </html>
