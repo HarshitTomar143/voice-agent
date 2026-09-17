@@ -22,14 +22,13 @@
         
         const node = new AudioWorkletNode(context, 'mic-processor');
 
-        node.port.onmessage = (event) => {
-            socket.send(event.data);
-            };
-        
-        source.connect(node)
 
         const socket = new WebSocket('ws://localhost:8000/ws');
-        socket.onopen = () => console.log('connected!');
+        socket.onopen = () => {
+            console.log('connected!');
+            node.port.onmessage = (event) => { socket.send(event.data); };
+            source.connect(node);
+        }
 
         socket.onmessage = async (event) => {
             const arrayBuffer = await event.data.arrayBuffer()
