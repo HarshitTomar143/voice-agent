@@ -1,8 +1,9 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from faster_whisper import WhisperModel
+import numpy as np
 app = FastAPI()
 
-model = WhisperModel("base")
+model = WhisperModel("base", device="cpu", compute_type="int8")
 print("Whisper model loaded!")
 
 
@@ -15,8 +16,12 @@ async def audio_echo(websocket: WebSocket):
             data = await websocket.receive_bytes()
             buffer += data
             if len(buffer)>= 192000 :
-                print(f"buffer full! collected {len(buffer)} bytes")
-                buffer = b""
+                samples = np.frombuffer(buffer, dtype=np.float32)
+                downsampled = samples[::3]
+                segments, info = model.transcribe(downsampled, language="en")
+                for segment in segments:
+                    print("The voice is:", segment.text)
+                buffer = b""    
             
     except WebSocketDisconnect:
         pass
