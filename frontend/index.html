@@ -34,7 +34,7 @@
             const arrayBuffer = await event.data.arrayBuffer()
             const samples = new Float32Array(arrayBuffer);
 
-            const audioBuffer = context.createBuffer(1, samples.length, context.sampleRate)
+            const audioBuffer = context.createBuffer(1, samples.length, 22050)
             audioBuffer.copyToChannel(samples,0)
 
             const player = context.createBufferSource();

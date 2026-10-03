@@ -21,8 +21,6 @@ client = Groq()
 piper_voice = PiperVoice.load("F:/Projects/voice-agent/voices/en_US-lessac-medium.onnx")
 print("Piper loaded!")
 
-with wave.open("test.wav", "wb") as wav_file:
-    piper_voice.synthesize_wav("Hello, I am your voice assistant. Testing one two three.", wav_file)
 
 @app.websocket("/ws")
 async def audio_echo(websocket: WebSocket):
@@ -39,7 +37,7 @@ async def audio_echo(websocket: WebSocket):
             data = await websocket.receive_bytes()
             buffer += data
 
-            batch_samples = np.frombuffer(data, dtype=np.float32)   # convert THIS batch
+            batch_samples = np.frombuffer(data, dtype=np.float32) 
             batch_down = batch_samples[::3] 
             vad_buffer = np.concatenate([vad_buffer, batch_down])
 
@@ -67,12 +65,24 @@ async def audio_echo(websocket: WebSocket):
                             response = client.chat.completions.create(
                                 model="openai/gpt-oss-20b",
                                 messages=[
+                                    {"role": "system", "content": "You are a voice assistant. Reply in plain conversational text with NO markdown, NO asterisks, NO bullet points, NO emojis, and no special symbols. Keep replies short, 1-2 sentences, since they will be read aloud."},
                                     {"role": "user", "content":transcribed_text}
                                 ]
                             )                    
 
                             reply = response.choices[0].message.content
                             print("Ai Reply: ", reply)    
+
+                            audio_chunks = []
+                            for audio_chunk in piper_voice.synthesize(reply):
+                                audio_chunks.append(audio_chunk.audio_int16_bytes)
+                            audio_bytes = b"".join(audio_chunks)
+
+                            audio_int16 = np.frombuffer(audio_bytes, dtype=np.int16)
+                            audio_float32 = audio_int16.astype(np.float32)/32768.0
+
+                            await websocket.send_bytes(audio_float32.tobytes())
+
                             buffer = b""
                             is_speaking = False
                             silence_count = 0   
