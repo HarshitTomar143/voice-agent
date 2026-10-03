@@ -67,11 +67,21 @@ async def audio_echo(websocket: WebSocket):
                                 messages=[
                                     {"role": "system", "content": "You are a voice assistant. Reply in plain conversational text with NO markdown, NO asterisks, NO bullet points, NO emojis, and no special symbols. Keep replies short, 1-2 sentences, since they will be read aloud."},
                                     {"role": "user", "content":transcribed_text}
-                                ]
-                            )                    
+                                ],
+                                stream = True,
+                            )
 
-                            reply = response.choices[0].message.content
-                            print("Ai Reply: ", reply)    
+                            reply =""
+
+                            for chunk in response:
+                                token = chunk.choices[0].delta.content
+                                if token:
+                                    reply += token
+                                    print(token, end="",flush=True)
+                            print()    
+                                                
+
+                              
 
                             audio_chunks = []
                             for audio_chunk in piper_voice.synthesize(reply):
