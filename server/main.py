@@ -42,15 +42,14 @@ async def audio_echo(websocket: WebSocket):
                         silence_count += 1
                         if silence_count >=19:
                             print("Turn Has Ended")
+                            samples = np.frombuffer(buffer, dtype=np.float32)
+                            downsampled = samples[::3]
+                            segments, info = model.transcribe(downsampled, language="en")
+                            for segment in segments:
+                                print("YOU SAID :", segment.text)
+                            buffer = b""
                             is_speaking = False
                             silence_count = 0    
-
-            if len(buffer)>= 192000 :
-                samples = np.frombuffer(buffer, dtype=np.float32)
-                downsampled = samples[::3]
-                segments, info = model.transcribe(downsampled, language="en")
-
-               
 
                 for segment in segments:
                     print("The voice is:", segment.text)
