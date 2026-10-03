@@ -1,6 +1,8 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from faster_whisper import WhisperModel
 import numpy as np
+from groq import Groq
+from dotenv import load_dotenv
 from silero_vad import load_silero_vad
 import torch
 app = FastAPI()
@@ -10,6 +12,11 @@ print("VAD model loaded!")
 model = WhisperModel("base", device="cpu", compute_type="int8")
 print("Whisper model loaded!")
 
+load_dotenv()
+print("Environment Variables loaded")
+client = Groq()
+
+
 @app.websocket("/ws")
 async def audio_echo(websocket: WebSocket):
     await websocket.accept()
@@ -17,6 +24,8 @@ async def audio_echo(websocket: WebSocket):
     vad_buffer = np.array([], dtype=np.float32)
     is_speaking = False
     silence_count= 0  
+
+    transcribed_text = ""
     
     try:
         while True:
@@ -40,20 +49,28 @@ async def audio_echo(websocket: WebSocket):
                 else:
                     if is_speaking:
                         silence_count += 1
-                        if silence_count >=19:
+                        if silence_count >=35:
                             print("Turn Has Ended")
                             samples = np.frombuffer(buffer, dtype=np.float32)
                             downsampled = samples[::3]
                             segments, info = model.transcribe(downsampled, language="en")
                             for segment in segments:
                                 print("YOU SAID :", segment.text)
+                                transcribed_text += segment.text
+                            response = client.chat.completions.create(
+                                model="openai/gpt-oss-20b",
+                                messages=[
+                                    {"role": "user", "content":transcribed_text}
+                                ]
+                            )                    
+
+                            reply = response.choices[0].message.content
+                            print("Ai Reply: ", reply)    
                             buffer = b""
                             is_speaking = False
-                            silence_count = 0    
+                            silence_count = 0   
+                            transcribed_text = ""   
 
-                for segment in segments:
-                    print("The voice is:", segment.text)
-                buffer = b""  
       
             
     except WebSocketDisconnect:
