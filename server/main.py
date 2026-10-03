@@ -72,12 +72,16 @@ async def audio_echo(websocket: WebSocket):
                             )
 
                             reply =""
+                            sentence_buffer =""
 
                             for chunk in response:
                                 token = chunk.choices[0].delta.content
                                 if token:
                                     reply += token
-                                    print(token, end="",flush=True)
+                                    sentence_buffer += token
+                                    if any(p in  token for p in ".!?"):
+                                        print("SENTENCE:", sentence_buffer)
+                                        sentence_buffer = ""
                             print()    
                                                 
 
