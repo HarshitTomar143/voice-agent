@@ -2,8 +2,10 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from faster_whisper import WhisperModel
 import numpy as np
 from groq import Groq
+import wave
 from dotenv import load_dotenv
 from silero_vad import load_silero_vad
+from piper import PiperVoice
 import torch
 app = FastAPI()
 vad_model = load_silero_vad()
@@ -16,6 +18,11 @@ load_dotenv()
 print("Environment Variables loaded")
 client = Groq()
 
+piper_voice = PiperVoice.load("F:/Projects/voice-agent/voices/en_US-lessac-medium.onnx")
+print("Piper loaded!")
+
+with wave.open("test.wav", "wb") as wav_file:
+    piper_voice.synthesize_wav("Hello, I am your voice assistant. Testing one two three.", wav_file)
 
 @app.websocket("/ws")
 async def audio_echo(websocket: WebSocket):
@@ -53,7 +60,7 @@ async def audio_echo(websocket: WebSocket):
                             print("Turn Has Ended")
                             samples = np.frombuffer(buffer, dtype=np.float32)
                             downsampled = samples[::3]
-                            segments, info = model.transcribe(downsampled, language="en")
+                            segments, info = model.transcribe(downsampled, language="hi")
                             for segment in segments:
                                 print("YOU SAID :", segment.text)
                                 transcribed_text += segment.text
